@@ -13,18 +13,12 @@ namespace Challenge.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
-public class AuthController : ControllerBase
+public class AuthController(
+    AppDbContext db,
+    JwtOptions jwt) : ControllerBase
 {
-    private readonly AppDbContext _db;
-    private readonly JwtOptions _jwt;
-
-    public AuthController(
-        AppDbContext db,
-        JwtOptions jwt)
-    {
-        _db = db;
-        _jwt = jwt;
-    }
+    private readonly AppDbContext _db = db;
+    private readonly JwtOptions _jwt = jwt;
 
     public record LoginRequest(string Username, string Password);
 

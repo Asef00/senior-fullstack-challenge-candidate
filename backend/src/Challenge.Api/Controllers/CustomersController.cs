@@ -8,14 +8,9 @@ namespace Challenge.Api.Controllers;
 [ApiController]
 [Route("api/customers")]
 [Authorize]
-public class CustomersController : ControllerBase
+public class CustomersController(AppDbContext db) : ControllerBase
 {
-    private readonly AppDbContext _db;
-
-    public CustomersController(AppDbContext db)
-    {
-        _db = db;
-    }
+    private readonly AppDbContext _db = db;
 
     [HttpGet]
     public async Task<IActionResult> Get()

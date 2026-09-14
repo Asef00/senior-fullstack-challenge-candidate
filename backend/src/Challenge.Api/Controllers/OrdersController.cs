@@ -11,18 +11,12 @@ namespace Challenge.Api.Controllers;
 [ApiController]
 [Route("api/orders")]
 [Authorize]
-public class OrdersController : ControllerBase
+public class OrdersController(
+    OrderService orderService,
+    AppDbContext db) : ControllerBase
 {
-    private readonly OrderService _orderService;
-    private readonly AppDbContext _db;
-
-    public OrdersController(
-        OrderService orderService,
-        AppDbContext db)
-    {
-        _orderService = orderService;
-        _db = db;
-    }
+    private readonly OrderService _orderService = orderService;
+    private readonly AppDbContext _db = db;
 
     [HttpPost]
     public async Task<IActionResult> Create(
