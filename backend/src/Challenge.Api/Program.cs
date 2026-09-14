@@ -10,6 +10,13 @@ using Challenge.Api.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.AddSingleton(
+    builder.Configuration
+        .GetSection(JwtOptions.SectionName)
+        .Get<JwtOptions>()
+        ?? throw new InvalidOperationException(
+            "Jwt configuration is missing."));
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
