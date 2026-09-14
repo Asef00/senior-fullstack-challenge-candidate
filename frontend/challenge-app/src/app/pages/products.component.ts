@@ -138,6 +138,6 @@ export class ProductsComponent implements OnInit {
   }
 
   createOrder(): void {
-    this.router.navigate(['/orders/new']);
+    this.router.navigate(['/orders/create']);
   }
 }
