@@ -13,7 +13,9 @@ public class ExceptionHandlingMiddleware
     private readonly RequestDelegate _next;
     private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-    public ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+    public ExceptionHandlingMiddleware(
+        RequestDelegate next,
+        ILogger<ExceptionHandlingMiddleware> logger)
     {
         _next = next;
         _logger = logger;
@@ -25,6 +27,18 @@ public class ExceptionHandlingMiddleware
         {
             await _next(context);
         }
+        catch (ArgumentException ex)
+        {
+            await WriteAsync(context, HttpStatusCode.BadRequest, ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            await WriteAsync(context, HttpStatusCode.NotFound, ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            await WriteAsync(context, HttpStatusCode.Conflict, ex.Message);
+        }
         catch (NotImplementedException ex)
         {
             await WriteAsync(context, HttpStatusCode.NotImplemented, ex.Message);
@@ -32,14 +46,22 @@ public class ExceptionHandlingMiddleware
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unhandled exception");
-            await WriteAsync(context, HttpStatusCode.InternalServerError, "An unexpected error occurred.");
+            await WriteAsync(
+                context,
+                HttpStatusCode.InternalServerError,
+                "An unexpected error occurred.");
         }
     }
 
-    private static Task WriteAsync(HttpContext context, HttpStatusCode status, string message)
+    private static Task WriteAsync(
+        HttpContext context,
+        HttpStatusCode status,
+        string message)
     {
         context.Response.StatusCode = (int)status;
         context.Response.ContentType = "application/json";
-        return context.Response.WriteAsync(JsonSerializer.Serialize(new { message }, JsonOptions));
+
+        return context.Response.WriteAsync(
+            JsonSerializer.Serialize(new { message }, JsonOptions));
     }
 }
