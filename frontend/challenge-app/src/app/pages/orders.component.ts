@@ -1,25 +1,45 @@
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { Component, inject, OnInit } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
+
+interface Order {
+  id: number;
+  orderNumber: string;
+  orderDate: string;
+  status: number;
+  totalAmount: number;
+  customer: {
+    id: number;
+    code: string;
+    name: string;
+  };
+}
+
+interface OrdersResponse {
+  items: Order[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+}
 
 @Component({
   selector: 'app-orders',
-  imports: [FormsModule, RouterLink],
+  imports: [CommonModule, RouterLink],
   template: `
     <h1>Orders</h1>
-    <p><a routerLink="/orders/create">Create order</a></p>
-    <div class="toolbar">
-      <input [(ngModel)]="orderNumber" placeholder="Order number" />
-      <input [(ngModel)]="customerId" placeholder="Customer id" />
-      <select [(ngModel)]="status">
-        <option value="">All statuses</option>
-        <option value="Confirmed">Confirmed</option>
-        <option value="Cancelled">Cancelled</option>
-      </select>
-      <input type="date" [(ngModel)]="fromDate" />
-      <input type="date" [(ngModel)]="toDate" />
-      <button type="button" (click)="load()">Filter</button>
-    </div>
+
+    <p>
+      <a routerLink="/orders/create">Create order</a>
+      |
+      <a routerLink="/products">Products</a>
+    </p>
+
+    @if (error) {
+      <p class="error">{{ error }}</p>
+    }
+
     <table>
       <thead>
         <tr>
@@ -31,34 +51,91 @@ import { RouterLink } from '@angular/router';
           <th></th>
         </tr>
       </thead>
+
       <tbody>
-        <tr>
-          <td colspan="6">Load GET /api/orders with server-side search, filter, sort, and pagination.</td>
-        </tr>
+        @for (order of orders; track order.id) {
+          <tr>
+            <td>{{ order.orderNumber }}</td>
+            <td>{{ order.customer.code }} - {{ order.customer.name }}</td>
+            <td>{{ order.orderDate | date: 'medium' }}</td>
+            <td>{{ order.totalAmount }}</td>
+            <td>{{ order.status === 1 ? 'Confirmed' : 'Cancelled' }}</td>
+            <td>
+              <a [routerLink]="['/orders', order.id]"> Details </a>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6">No orders found.</td>
+          </tr>
+        }
       </tbody>
     </table>
-    <div class="toolbar">
-      <button type="button" (click)="prev()">Previous</button>
-      <span>Page {{ page }}</span>
-      <button type="button" (click)="next()">Next</button>
-    </div>
-  `
-})
-export class OrdersComponent {
-  orderNumber = '';
-  customerId = '';
-  status = '';
-  fromDate = '';
-  toDate = '';
-  page = 1;
 
-  load(): void {}
+    <div>
+      <button type="button" (click)="prev()" [disabled]="page <= 1 || loading">
+        Previous
+      </button>
+
+      <span> Page {{ page }} / {{ totalPages || 1 }} </span>
+
+      <button
+        type="button"
+        (click)="next()"
+        [disabled]="page >= totalPages || loading"
+      >
+        Next
+      </button>
+    </div>
+  `,
+})
+export class OrdersComponent implements OnInit {
+  private readonly http = inject(HttpClient);
+
+  orders: Order[] = [];
+  page = 1;
+  pageSize = 10;
+  totalPages = 0;
+  loading = false;
+  error = '';
+
+  ngOnInit(): void {
+    this.load();
+  }
+
+  load(): void {
+    this.loading = true;
+    this.error = '';
+
+    const params = new HttpParams()
+      .set('page', this.page)
+      .set('pageSize', this.pageSize);
+
+    this.http.get<OrdersResponse>('/api/orders', { params }).subscribe({
+      next: (response) => {
+        this.orders = response.items;
+        this.page = response.page;
+        this.totalPages = response.totalPages;
+        this.loading = false;
+      },
+      error: (error) => {
+        this.error = error.error?.message ?? 'Failed to load orders.';
+        this.loading = false;
+      },
+    });
+  }
+
   prev(): void {
     if (this.page > 1) {
-      this.page -= 1;
+      this.page--;
+      this.load();
     }
   }
+
   next(): void {
-    this.page += 1;
+    if (this.page < this.totalPages) {
+      this.page++;
+      this.load();
+    }
   }
 }
