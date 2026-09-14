@@ -74,7 +74,7 @@ public class OrderService
 
             var order = new Order
             {
-                OrderNumber = $"ORD-{Guid.NewGuid():N}",
+                OrderNumber = $"ORD-{Guid.NewGuid():N}"[..32],
                 CustomerId = customer.Id,
                 OrderDate = now,
                 Status = OrderStatus.Confirmed,
